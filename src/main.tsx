@@ -132,6 +132,7 @@ function App() {
       const data = await api<{ plan: Plan }>('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create', favorites: selected, mood, city }) });
       setPlan(data.plan);
       if (data.plan.recommendations.length === 0) setNotice('Qloo returned no suggestions for these tastes. Try different favorites.');
+      else if (data.plan.recommendations.length < 3) setNotice(`Qloo returned only ${data.plan.recommendations.length} distinct suggestions for these tastes.`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not create your trail.'); }
     finally { setBusy(false); }
   }

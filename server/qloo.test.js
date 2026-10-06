@@ -62,3 +62,10 @@ test('rate limits become a clear retryable error', async () => {
     (error) => error instanceof QlooError && error.code === 'RATE_LIMITED' && error.status === 429,
   );
 });
+
+test('a Qloo search 404 is an empty match list', async () => {
+  const entities = await searchEntities({
+    query: 'unlikely title', type: 'book', apiKey: 'test-key', fetchImpl: async () => response({}, 404),
+  });
+  assert.deepEqual(entities, []);
+});

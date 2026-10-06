@@ -28,7 +28,7 @@ function normalizeEntity(entity, fallbackType) {
   return { id: String(id), name: String(name), type, imageUrl };
 }
 
-async function request(path, params, { apiKey, fetchImpl = fetch }) {
+async function request(path, params, { apiKey, fetchImpl = fetch, allowNotFound = false }) {
   if (!apiKey) throw new QlooError('NOT_CONFIGURED', 'Qloo API key is not configured on the server.', 503);
   const url = new URL(path, BASE_URL);
   for (const [key, value] of Object.entries(params)) {
@@ -44,6 +44,8 @@ async function request(path, params, { apiKey, fetchImpl = fetch }) {
     throw new QlooError('UPSTREAM_UNAVAILABLE', 'Qloo could not be reached. Please try again.', 502);
   }
   if (response.status === 429) throw new QlooError('RATE_LIMITED', 'Qloo is rate limiting requests. Please try again shortly.', 429);
+  if (response.status === 404 && allowNotFound) return { results: [] };
+  if (response.status === 401 || response.status === 403) throw new QlooError('AUTH_FAILED', 'Qloo rejected this API key or entity type. Check the server configuration.', 502);
   if (!response.ok) throw new QlooError('UPSTREAM_ERROR', `Qloo returned HTTP ${response.status}.`, 502);
   let data;
   try {
@@ -63,7 +65,7 @@ export async function searchEntities({ query, type, apiKey, fetchImpl }) {
   if (typeof query !== 'string' || query.trim().length < 2 || query.length > 100) {
     throw new QlooError('INVALID_INPUT', 'Enter at least two characters to search.', 400);
   }
-  const data = await request('/search', { query: query.trim(), types: typeUrn(type) }, { apiKey, fetchImpl });
+  const data = await request('/search', { query: query.trim(), types: typeUrn(type) }, { apiKey, fetchImpl, allowNotFound: true });
   return results(data, type).slice(0, 8);
 }
 
