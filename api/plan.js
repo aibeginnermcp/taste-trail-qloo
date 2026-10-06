@@ -1,0 +1,6 @@
+import { handleRequest } from '../server/http.js';
+
+export default async function handler(req, res) {
+  const result = await handleRequest(req.method, '/api/plan', req.body ?? {}, process.env.QLOO_API_KEY);
+  res.status(result.status).json(result.body);
+}
